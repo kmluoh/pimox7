@@ -101,103 +101,9 @@ printf "
 =========================================================================================\n
 "
 
-apt update && apt install -y bridge-utils gpg
-
 #### SET NEW HOSTNAME ###################################################################################################################
 hostnamectl set-hostname $HOSTNAME
-
-#### RECONFIGURE NETWORK #### /etc/hosts REMOVE IPv6 #### /etc/network/interfaces.new CONFIGURE NETWORK TO CHANGE ON REBOOT ##############
-printf "
-=========================================================================================
-$GREEN ! FIXING NETWORK CONFIGURATION.... ERRORS ARE NOMALAY FINE AND RESOLVED AFTER REBOOT ! $NORMAL
-=========================================================================================
-\n"
 sed -i -e "s/^127\.0\.1\.1.*$/$RPI_IP_ONLY\t$HOSTNAME/g" /etc/hosts
-
-if [ -d '/sys/devices/platform/3c0800000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0/net' ]; then
-  cat <<-EOF > /etc/network/interfaces
-# interfaces(5) file used by ifup(8) and ifdown(8)
-# Include files from /etc/network/interfaces.d:
-source /etc/network/interfaces.d/*
-
-# loopback network interface
-auto lo
-iface lo inet loopback
-
-# lan0 network interface
-iface lan0 inet manual
-
-# wan0 network interface
-iface wan0 inet manual
-
-# vmbr0 network interface
-auto vmbr0
-iface vmbr0 inet static
-    address $RPI_IP
-    gateway $GATEWAY
-    bridge-ports wan0
-    bridge-stp off
-    bridge-fd 0
-
-# vmbr1 network interface
-#auto vmbr1
-iface vmbr1 inet static
-    bridge-ports lan0
-    bridge-stp off
-    bridge-fd 0
-
-EOF
-  ip addr flush wan0
-  ip addr flush lan0
-else
-	cat <<-EOF > /etc/network/interfaces
-# interfaces(5) file used by ifup(8) and ifdown(8)
-# Include files from /etc/network/interfaces.d:
-source /etc/network/interfaces.d/*
-
-# loopback network interface
-auto lo
-iface lo inet loopback
-
-# lan1 network interface
-iface lan1 inet manual
-
-# lan2 network interface
-iface lan2 inet manual
-
-# wan0 network interface
-iface wan0 inet manual
-
-# vmbr0 network interface
-auto vmbr0
-iface vmbr0 inet static
-    address $RPI_IP
-    gateway $GATEWAY
-    bridge-ports wan0
-    bridge-stp off
-    bridge-fd 0
-
-# vmbr1 network interface
-#auto vmbr1
-iface vmbr1 inet static
-    bridge-ports lan1
-    bridge-stp off
-    bridge-fd 0
-
-# vmbr2 network interface
-#auto vmbr2
-iface vmbr2 inet static
-    bridge-ports lan2
-    bridge-stp off
-    bridge-fd 0
-
-EOF
-  ip addr flush wan0
-  ip addr flush lan1
-  ip addr flush lan2
-fi
-
-systemctl restart networking
 
 #### ADD SOURCE PIMOX7 + KEY & UPDATE & INSTALL RPI-KERNEL-HEADERS #######################################################################
 printf "# PiMox7 Development Repo
@@ -216,6 +122,75 @@ DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends -o Dpkg::O
 
 #### Continue with remaining packages
 DEBIAN_FRONTEND=noninteractive apt install -y -o Dpkg::Options::="--force-confdef" proxmox-ve
+
+#### RECONFIGURE NETWORK #### /etc/hosts REMOVE IPv6 #### /etc/network/interfaces.new CONFIGURE NETWORK TO CHANGE ON REBOOT ##############
+printf "
+=========================================================================================
+$GREEN ! FIXING NETWORK CONFIGURATION.... ERRORS ARE NOMALAY FINE AND RESOLVED AFTER REBOOT ! $NORMAL
+=========================================================================================
+\n"
+
+if [ -d '/sys/devices/platform/3c0800000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0/net' ]; then
+  cat <<-EOF > /etc/network/interfaces.new
+source /etc/network/interfaces.d/*
+
+auto lo
+iface lo inet loopback
+
+iface lan0 inet manual
+
+iface wan0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+	address $RPI_IP
+	gateway $GATEWAY
+	bridge-ports wan0
+	bridge-stp off
+	bridge-fd 0
+
+auto vmbr1
+iface vmbr1 inet manual
+	bridge-ports lan0
+	bridge-stp off
+	bridge-fd 0
+
+EOF
+else
+	cat <<-EOF > /etc/network/interfaces.new
+source /etc/network/interfaces.d/*
+
+auto lo
+iface lo inet loopback
+
+iface lan1 inet manual
+
+iface lan2 inet manual
+
+iface wan0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+	address $RPI_IP
+	gateway $GATEWAY
+	bridge-ports wan0
+	bridge-stp off
+	bridge-fd 0
+
+auto vmbr1
+iface vmbr1 inet manual
+	bridge-ports lan1
+	bridge-stp off
+	bridge-fd 0
+
+auto vmbr2
+iface vmbr2 inet manual
+	bridge-ports lan2
+	bridge-stp off
+	bridge-fd 0
+
+EOF
+fi
 
 #### CONFIGURE PIMOX7 BANNER #############################################################################################################
 cp /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js.auto.backup
