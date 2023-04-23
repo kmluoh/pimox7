@@ -33,8 +33,6 @@ printf " $YELLOW
 ====================================================================
 $NORMAL\n" && sleep 3
 
-apt update && apt install -y bridge-utils gpg
-
 #### GET USER INPUTS #### HOSTNAME ######################################################################################################
 read -p "Enter new hostname e.g. RPi4-01-PVE : " HOSTNAME
 while [[ ! "$HOSTNAME" =~ ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$  ]]
@@ -102,6 +100,8 @@ printf "
  Begin installation, Normal duration on a default RPi4 ~ 30 minutes, be patient...
 =========================================================================================\n
 "
+
+apt update && apt install -y bridge-utils gpg
 
 #### SET NEW HOSTNAME ###################################################################################################################
 hostnamectl set-hostname $HOSTNAME
